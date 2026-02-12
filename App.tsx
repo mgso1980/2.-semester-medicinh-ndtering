@@ -182,7 +182,7 @@ export default function App() {
                       {cs.tags.map(tag => <span key={tag} className="text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 px-3 py-1 rounded-md">{tag}</span>)}
                     </div>
                     <h3 className="text-lg font-black text-slate-800 mb-3 group-hover:text-blue-700 leading-tight">Case {cs.id}: {cs.title}</h3>
-                    <p className="text-sm text-slate-500 line-clamp-3 line-height-relaxed italic">"{cs.scenario}"</p>
+                    <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed italic">"{cs.scenario}"</p>
                   </div>
                   <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-between items-center text-xs font-black text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     REFLEKTÉR NU
