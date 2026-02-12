@@ -109,6 +109,8 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentFeedback, setCurrentFeedback] = useState<string | null>(null);
   
+  const isSimulation = !process.env.API_KEY || process.env.API_KEY === "undefined";
+
   // Quiz State
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
@@ -124,7 +126,7 @@ export default function App() {
       setCurrentFeedback(feedback);
     } catch (error) {
       console.error("Error in handleSubmitReflection:", error);
-      setCurrentFeedback("Der opstod en uventet fejl ved behandling af din refleksion. Prøv igen senere.");
+      setCurrentFeedback("Der opstod en fejl. Appen kører nu i begrænset simulationstilstand.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -170,9 +172,16 @@ export default function App() {
         
         {currentView === AppView.DASHBOARD && (
           <div className="animate-in fade-in duration-500">
-            <div className="mb-8">
-              <h2 className="text-3xl font-black text-slate-900 mb-2">Kliniske Cases</h2>
-              <p className="text-lg text-slate-600">Træn din dømmekraft gennem virkelighedsnære scenarier fra sygeplejen.</p>
+            <div className="mb-8 flex justify-between items-end">
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 mb-2">Kliniske Cases</h2>
+                <p className="text-lg text-slate-600">Træn din dømmekraft gennem virkelighedsnære scenarier fra sygeplejen.</p>
+              </div>
+              {isSimulation && (
+                <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-amber-200">
+                  Simulationstilstand Aktiv
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {CASE_STUDIES.map(cs => (
@@ -282,17 +291,6 @@ export default function App() {
                   ))}
                 </div>
               </section>
-            </div>
-
-            <div className="bg-slate-900 text-white p-10 rounded-3xl shadow-2xl flex flex-col md:flex-row items-center gap-8 border border-white/10 print:hidden">
-               <div className="bg-white/10 p-6 rounded-full shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-               </div>
-               <div className="flex-grow text-center md:text-left">
-                  <h3 className="text-2xl font-black mb-2 italic">Indberet altid Utilsigtede Hændelser</h3>
-                  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">En UTH er en mulighed for læring. Det handler ikke om skyld, men om at forbedre systemerne for patientens skyld.</p>
-               </div>
-               <a href="https://dpsd.dk" target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-10 py-5 rounded-2xl font-black text-sm hover:bg-blue-50 transition-all shadow-xl uppercase tracking-widest active:scale-95">ÅBN DPSD.DK</a>
             </div>
           </div>
         )}
@@ -404,7 +402,10 @@ export default function App() {
                          <svg xmlns="http://www.w3.org/2000/svg" className="h-32 w-32 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
                       </div>
                       <div className="flex justify-between items-start mb-6 border-b border-emerald-200 pb-4 print:border-slate-200">
-                        <h3 className="text-2xl font-black text-emerald-900 italic print:text-slate-900">Underviserens Feedback</h3>
+                        <div className="flex flex-col">
+                          <h3 className="text-2xl font-black text-emerald-900 italic print:text-slate-900">Underviserens Feedback</h3>
+                          {isSimulation && <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Simulationstilstand (Intet API påkrævet)</span>}
+                        </div>
                         <button onClick={handlePrint} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-emerald-700 transition-colors shadow-lg print:hidden">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                           GEM / PRINT
