@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { CASE_STUDIES, QUIZ_QUESTIONS } from './constants';
-import { AppView, CaseStudy, QuizQuestion } from './types';
-import { getAIFeedback } from './services/gemini';
+import { CASE_STUDIES, QUIZ_QUESTIONS } from './constants.ts';
+import { AppView, CaseStudy } from './types.ts';
+import { getAIFeedback } from './services/gemini.ts';
 
 // --- Local Data for Resources ---
 const RISK_DRUGS_INFO = [
@@ -112,7 +112,8 @@ export default function App() {
   // Quiz State
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
-  const [quizFeedback, setQuizFeedback] = useState<{ correct: boolean, text: string } | null>(null);
+  // FIX: Track selectedIndex in state to properly identify user selection for feedback rendering.
+  const [quizFeedback, setQuizFeedback] = useState<{ correct: boolean, text: string, selectedIndex: number } | null>(null);
   const [quizFinished, setQuizFinished] = useState(false);
 
   const handleSubmitReflection = async () => {
@@ -128,7 +129,8 @@ export default function App() {
     const currentQ = QUIZ_QUESTIONS[quizIdx];
     const isCorrect = idx === currentQ.correctIndex;
     if (isCorrect) setQuizScore(quizScore + 1);
-    setQuizFeedback({ correct: isCorrect, text: currentQ.explanation });
+    // FIX: Include selected index when setting feedback.
+    setQuizFeedback({ correct: isCorrect, text: currentQ.explanation, selectedIndex: idx });
   };
 
   const nextQuizQ = () => {
@@ -312,7 +314,8 @@ export default function App() {
                         quizFeedback 
                           ? i === QUIZ_QUESTIONS[quizIdx].correctIndex
                             ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
-                            : i === quizFeedback.correct === false ? 'bg-red-50 border-red-200 text-red-900' : 'bg-white border-slate-100 text-slate-400'
+                            // FIX: Correctly check selected index and show red for the user's incorrect choice.
+                            : (i === quizFeedback.selectedIndex && !quizFeedback.correct) ? 'bg-red-50 border-red-200 text-red-900' : 'bg-white border-slate-100 text-slate-400'
                           : 'bg-white border-slate-200 hover:border-blue-400 hover:bg-blue-50/30'
                       }`}
                     >
