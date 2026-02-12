@@ -109,8 +109,6 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentFeedback, setCurrentFeedback] = useState<string | null>(null);
   
-  const isSimulation = !process.env.API_KEY || process.env.API_KEY === "undefined";
-
   // Quiz State
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
@@ -126,7 +124,7 @@ export default function App() {
       setCurrentFeedback(feedback);
     } catch (error) {
       console.error("Error in handleSubmitReflection:", error);
-      setCurrentFeedback("Der opstod en fejl. Appen kører nu i begrænset simulationstilstand.");
+      setCurrentFeedback("Der opstod en fejl. Prøv venligst igen senere.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -172,16 +170,9 @@ export default function App() {
         
         {currentView === AppView.DASHBOARD && (
           <div className="animate-in fade-in duration-500">
-            <div className="mb-8 flex justify-between items-end">
-              <div>
-                <h2 className="text-3xl font-black text-slate-900 mb-2">Kliniske Cases</h2>
-                <p className="text-lg text-slate-600">Træn din dømmekraft gennem virkelighedsnære scenarier fra sygeplejen.</p>
-              </div>
-              {isSimulation && (
-                <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-amber-200">
-                  Simulationstilstand Aktiv
-                </div>
-              )}
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-slate-900 mb-2">Kliniske Cases</h2>
+              <p className="text-lg text-slate-600">Træn din dømmekraft gennem virkelighedsnære scenarier fra sygeplejen.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {CASE_STUDIES.map(cs => (
@@ -404,7 +395,6 @@ export default function App() {
                       <div className="flex justify-between items-start mb-6 border-b border-emerald-200 pb-4 print:border-slate-200">
                         <div className="flex flex-col">
                           <h3 className="text-2xl font-black text-emerald-900 italic print:text-slate-900">Underviserens Feedback</h3>
-                          {isSimulation && <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Simulationstilstand (Intet API påkrævet)</span>}
                         </div>
                         <button onClick={handlePrint} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-emerald-700 transition-colors shadow-lg print:hidden">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>

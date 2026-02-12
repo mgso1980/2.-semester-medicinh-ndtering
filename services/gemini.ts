@@ -2,58 +2,52 @@
 import { GoogleGenAI } from "@google/genai";
 import { CaseStudy } from "../types.ts";
 
-// Mock feedback database til brug når API-nøgle mangler (Simulation Mode)
-const SIMULATED_FEEDBACK: Record<number, string> = {
-  1: `DIN REFLEKSION ER MODTAGET (Simulationstilstand)
+// Faglige fokuspunkter til brug som fallback
+const CLINICAL_GUIDANCE: Record<number, string> = {
+  1: `Faglige læringspunkter for denne case:
   
-  Faglig vurdering:
-  - Du har korrekt identificeret risikoen ved koncentreret kalium.
-  - Husk altid 'Dobbelt-kontrol' ved højrisikomedicin. Kalium må aldrig findes i koncentreret form på sengestuer.
-  - Din observation af arytmi som faresignal er central.
+  - Ved administration af kalium skal der altid foretages dobbelt-kontrol af både præparat og beregning.
+  - Koncentreret kalium må aldrig findes på patientstuer; det skal opbevares centralt og mærkes tydeligt.
+  - Monitorering af hjerterytme (telemetri) er obligatorisk under korrigering af svær hypokaliæmi.
   
-  Anbefaling: Repetér afdelingens instrukser for medicinblanding og infusionshastigheder.`,
-  2: `DIN REFLEKSION ER MODTAGET (Simulationstilstand)
+  Husk altid at tjekke afdelingens lokale instruks for maksimale infusionshastigheder.`,
+  2: `Faglige læringspunkter for denne case:
   
-  Faglig vurdering:
-  - God fokus på forvekslingsrisikoen mellem hurtig- og langtidsvirkende insulin.
-  - Du bør overveje, hvordan opbevaringen kan optimeres (f.eks. adskilte hylder eller farvekoder).
-  - Korrekt fokus på de kliniske tegn på hypoglykæmi (konfusion, koldsved).
+  - Sikker identifikation af præparatet er afgørende. Insulin-penne kan ligne hinanden visuelt, hvorfor man skal læse på etiketten hver gang.
+  - Ved insulin-fejldosering skal borgeren monitoreres tæt for hypoglykæmiske symptomer som konfusion, rysten og koldsved.
+  - Overvej altid om opbevaringen af hurtig- og langtidsvirkende insulin kan adskilles fysisk for at minimere forvekslingsrisiko.
   
-  Anbefaling: Gennemgå 'De 5 Rigtige' med særligt fokus på 'Rigtig Dosis' og 'Rigtig Medicin'.`,
-  3: `DIN REFLEKSION ER MODTAGET (Simulationstilstand)
+  Anvend 'De 5 Rigtige' konsekvent ved hver administration.`,
+  3: `Faglige læringspunkter for denne case:
   
-  Faglig vurdering:
-  - Kritisk vigtig observation af respirationsfrekvensen. 
-  - Ved administration af opioider til KOL-patienter er monitorering af bevidsthedsniveauet lige så vigtigt som selve vejrtrækningen.
-  - Du har ret i, at Naloxon altid skal være præsent i afdelingen.
+  - Opioider virker dæmpende på respirationscentret. En faldende respirationsfrekvens er ofte det første tegn på overdosering.
+  - Særlig forsigtighed kræves hos patienter med nedsat lungefunktion (f.eks. KOL) eller ved kombination med andre sløvende præparater.
+  - Naloxon skal altid være tilgængeligt som modgift ved administration af parenterale opioider.
   
-  Anbefaling: Læs op på opioid-induceret respirationsdepression og monitoreringsintervaller.`,
-  4: `DIN REFLEKSION ER MODTAGET (Simulationstilstand)
+  Systematisk monitorering af bevidsthedsniveau og respiration er en kerneopgave i smertebehandlingen.`,
+  4: `Faglige læringspunkter for denne case:
   
-  Faglig vurdering:
-  - Du adresserer korrekt kompleksiteten ved polyfarmaci.
-  - Interaktionen mellem Warfarin og makrolider (antibiotika) er en klassisk kilde til alvorlige blødninger.
-  - Godt set at INR-monitorering skal intensiveres ved medicinskift.
+  - AK-behandling med Warfarin kræver altid tjek af interaktioner, før ny medicin påbegyndes.
+  - Mange typer antibiotika påvirker tarmfloraen og dermed K-vitamin produktionen, hvilket forstærker Warfarins virkning.
+  - Ved opstart af interagerende medicin skal INR måles hyppigere for at justere dosis rettidigt.
   
-  Anbefaling: Brug altid interaktions-databaser (f.eks. pro.medicin.dk) når en patient i AK-behandling får ny medicin.`,
-  5: `DIN REFLEKSION ER MODTAGET (Simulationstilstand)
+  Brug altid kliniske beslutningsstøtteværktøjer som pro.medicin.dk til interaktionstjek.`,
+  5: `Faglige læringspunkter for denne case:
   
-  Faglig vurdering:
-  - Du har fat i sagens kerne: Kommunikation og synlighed.
-  - Allergier skal ikke kun stå i journalen, men også markeres tydeligt (f.eks. rødt armbånd eller i FMK).
-  - Din hurtige identifikation af anafylaksi er livsvigtig.
+  - Dokumentation af allergier skal ske centralt og være synlig i alle relevante medicinsystemer (f.eks. FMK).
+  - Tjek altid patientens allergistatus som en fast del af forberedelsen, før medicinen trækkes op.
+  - Ved kendt allergi bør patienten også bære et fysisk kendetegn, som f.eks. et rødt allergibånd.
   
-  Anbefaling: Gennemgå hospitalets standard for allergimærkning og proceduren for anafylaktisk chok.`
+  Hurtig genkendelse af anafylaktiske symptomer og kendskab til placeringen af afdelingens adrenalin-kit redder liv.`
 };
 
 export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): Promise<string> => {
   const apiKey = process.env.API_KEY;
   
-  // Hvis ingen nøgle, brug simulationstilstand
+  // Hvis ingen nøgle findes, leveres de faglige fokuspunkter direkte
   if (!apiKey || apiKey === "undefined" || apiKey.length < 5) {
-    // Simulér en lille ventetid for realisme
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return SIMULATED_FEEDBACK[caseStudy.id] || "God refleksion. Du har vist god forståelse for de kliniske aspekter i denne case.";
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return CLINICAL_GUIDANCE[caseStudy.id] || "Tak for din refleksion. Gennemgå de generelle faglige standarder for medicinhåndtering for denne case.";
   }
 
   try {
@@ -87,7 +81,7 @@ export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): P
 
     return response.text || "Kunne ikke generere feedback. Prøv igen.";
   } catch (error: any) {
-    console.warn("API fejlede, skifter til simulation:", error);
-    return SIMULATED_FEEDBACK[caseStudy.id] || "Simulation: God refleksion med fokus på patientsikkerhed.";
+    console.warn("API fejl, viser generel vejledning.");
+    return CLINICAL_GUIDANCE[caseStudy.id] || "Gennemgå de kliniske standarder for denne patientkategori.";
   }
 };
