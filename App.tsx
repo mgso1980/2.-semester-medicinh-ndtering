@@ -1,8 +1,21 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CASE_STUDIES, QUIZ_QUESTIONS } from './constants.ts';
 import { AppView, CaseStudy } from './types.ts';
 import { getAIFeedback } from './services/gemini.ts';
+
+// Global types for aistudio environment
+// Fix: Define AIStudio interface separately and use it in the Window interface to avoid type mismatch and modifier errors.
+interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    aistudio: AIStudio;
+  }
+}
 
 // --- Local Data for Resources ---
 const RISK_DRUGS_INFO = [
@@ -108,12 +121,42 @@ export default function App() {
   const [reflectionText, setReflectionText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentFeedback, setCurrentFeedback] = useState<string | null>(null);
+  const [hasKey, setHasKey] = useState<boolean | null>(null);
   
   // Quiz State
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
   const [quizFeedback, setQuizFeedback] = useState<{ correct: boolean, text: string, selectedIndex: number } | null>(null);
   const [quizFinished, setQuizFinished] = useState(false);
+
+  useEffect(() => {
+    checkApiKey();
+  }, []);
+
+  const checkApiKey = async () => {
+    // Check if process.env.API_KEY is already populated (system injected)
+    const envKey = process.env.API_KEY;
+    if (envKey && envKey !== "undefined" && envKey.length > 10) {
+      setHasKey(true);
+      return;
+    }
+
+    // Otherwise check aistudio dialog state
+    if (window.aistudio) {
+      const selected = await window.aistudio.hasSelectedApiKey();
+      setHasKey(selected);
+    } else {
+      setHasKey(false);
+    }
+  };
+
+  const handleSelectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      // Assume success as per instructions to avoid race condition
+      setHasKey(true);
+    }
+  };
 
   const handleSubmitReflection = async () => {
     if (!selectedCase || !reflectionText.trim()) return;
@@ -157,6 +200,38 @@ export default function App() {
   const handlePrint = () => {
     window.print();
   };
+
+  // Rendering setup screen if no key is present
+  if (hasKey === false) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-10 text-center animate-in zoom-in-95 duration-500">
+          <div className="h-20 w-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-4">Initialisering påkrævet</h2>
+          <p className="text-slate-600 mb-8 font-medium leading-relaxed">For at kunne give dig feedback på dine refleksioner, skal applikationen have adgang til en API-nøgle.</p>
+          <button 
+            onClick={handleSelectKey}
+            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl hover:bg-blue-700 transition-all uppercase tracking-widest active:scale-95 mb-6"
+          >
+            Vælg API-nøgle
+          </button>
+          <a 
+            href="https://ai.google.dev/gemini-api/docs/billing" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs font-bold text-slate-400 hover:text-blue-500 underline transition-colors"
+          >
+            Læs om betaling og API-nøgler her
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // Waiting for check
+  if (hasKey === null) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
