@@ -3,18 +3,14 @@ import { GoogleGenAI } from "@google/genai";
 import { CaseStudy } from "../types.ts";
 
 export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): Promise<string> => {
-  // Always use the latest available key from process.env.API_KEY
   const apiKey = process.env.API_KEY;
   
-  if (!apiKey || apiKey === "undefined" || apiKey.length < 5) {
-    // If we get here, the dialog might have been bypassed or failed.
-    // Try one last check of the env but return a helpful message if it fails.
-    return "Fejl: Ingen gyldig API-nøgle fundet. Klik venligst på 'Vælg API-nøgle' for at fortsætte.";
+  if (!apiKey || apiKey === "undefined") {
+    return "Fejl: Ingen API-nøgle fundet i systemet. Kontakt venligst din administrator.";
   }
 
   try {
-    // Create new instance right before making an API call to ensure it always uses the most up-to-date API key
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     
     const systemInstruction = `
       Du er en erfaren klinisk sygeplejeunderviser. 
@@ -31,12 +27,12 @@ export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): P
       SCENARIE: ${caseStudy.scenario}
       REFLEKSION: "${reflection}"
       
-      Giv faglig feedback herpå.
+      Giv faglig feedback herpå baseret på sygeplejestandarder.
     `;
 
-    // Upgrade to gemini-3-pro-preview for advanced reasoning in clinical tasks
+    // Brug gemini-3-flash-preview som er hurtig og effektiv til tekst-feedback
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: promptText,
       config: {
         systemInstruction: systemInstruction,
@@ -50,12 +46,8 @@ export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): P
 
     return response.text;
   } catch (error: any) {
-    console.error("Detaljeret API fejl:", error);
-    
+    console.error("API fejl:", error);
     const msg = error?.message || "";
-    if (msg.includes("403") || msg.includes("permission")) {
-      return "Adgang nægtet: Sørg for at vælge en API-nøgle fra et projekt med fakturering aktiveret.";
-    } 
-    return `Teknisk fejl: ${msg || "Kunne ikke forbinde til AI-underviseren"}. Prøv igen om lidt.`;
+    return `Der skete en fejl ved generering af feedback: ${msg}. Tjek din forbindelse og prøv igen.`;
   }
 };
