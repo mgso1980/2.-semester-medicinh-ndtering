@@ -112,16 +112,22 @@ export default function App() {
   // Quiz State
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
-  // FIX: Track selectedIndex in state to properly identify user selection for feedback rendering.
   const [quizFeedback, setQuizFeedback] = useState<{ correct: boolean, text: string, selectedIndex: number } | null>(null);
   const [quizFinished, setQuizFinished] = useState(false);
 
   const handleSubmitReflection = async () => {
     if (!selectedCase || !reflectionText.trim()) return;
+    
     setIsAnalyzing(true);
-    const feedback = await getAIFeedback(selectedCase, reflectionText);
-    setCurrentFeedback(feedback);
-    setIsAnalyzing(false);
+    try {
+      const feedback = await getAIFeedback(selectedCase, reflectionText);
+      setCurrentFeedback(feedback);
+    } catch (error) {
+      console.error("Error in handleSubmitReflection:", error);
+      setCurrentFeedback("Der opstod en uventet fejl ved behandling af din refleksion. Prøv igen senere.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleQuizAnswer = (idx: number) => {
@@ -129,7 +135,6 @@ export default function App() {
     const currentQ = QUIZ_QUESTIONS[quizIdx];
     const isCorrect = idx === currentQ.correctIndex;
     if (isCorrect) setQuizScore(quizScore + 1);
-    // FIX: Include selected index when setting feedback.
     setQuizFeedback({ correct: isCorrect, text: currentQ.explanation, selectedIndex: idx });
   };
 
@@ -314,7 +319,6 @@ export default function App() {
                         quizFeedback 
                           ? i === QUIZ_QUESTIONS[quizIdx].correctIndex
                             ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
-                            // FIX: Correctly check selected index and show red for the user's incorrect choice.
                             : (i === quizFeedback.selectedIndex && !quizFeedback.correct) ? 'bg-red-50 border-red-200 text-red-900' : 'bg-white border-slate-100 text-slate-400'
                           : 'bg-white border-slate-200 hover:border-blue-400 hover:bg-blue-50/30'
                       }`}
