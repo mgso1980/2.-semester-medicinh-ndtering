@@ -2,52 +2,47 @@
 import { GoogleGenAI } from "@google/genai";
 import { CaseStudy } from "../types.ts";
 
-// Faglige fokuspunkter til brug som fallback
+// Faglige fokuspunkter baseret på kliniske standarder (Fallback)
 const CLINICAL_GUIDANCE: Record<number, string> = {
-  1: `Faglige læringspunkter for denne case:
+  1: `Her er de centrale faglige principper for denne situation:
   
-  - Ved administration af kalium skal der altid foretages dobbelt-kontrol af både præparat og beregning.
-  - Koncentreret kalium må aldrig findes på patientstuer; det skal opbevares centralt og mærkes tydeligt.
-  - Monitorering af hjerterytme (telemetri) er obligatorisk under korrigering af svær hypokaliæmi.
+- Administration af kalium kræver konsekvent dobbelt-kontrol af både præparat, styrke og beregning før ophældning.
+- Koncentreret kalium udgør en ekstrem patientsikkerhedsrisiko og skal opbevares aflåst eller adskilt fra almindelige infusionsvæsker.
+- Kontinuerlig EKG-monitorering (telemetri) er nødvendig ved hurtig korrigering af elektrolytforstyrrelser for at fange arytmier tidligt.
+- Infusionshastigheden skal altid tjekkes mod lokale retningslinjer for at undgå hyperkaliæmi-induceret hjertestop.`,
+  2: `Her er de centrale faglige principper for denne situation:
   
-  Husk altid at tjekke afdelingens lokale instruks for maksimale infusionshastigheder.`,
-  2: `Faglige læringspunkter for denne case:
+- Insulin-penne kan ligne hinanden visuelt; læs altid etiketten grundigt som en del af 'De 5 Rigtige'.
+- Ved fejlmedicinering med insulin skal borgerens blodsukker monitoreres tæt de næste 4-8 timer pga. risiko for sen hypoglykæmi.
+- Pårørende eller hjemmeplejen skal informeres om tidlige tegn på lavt blodsukker: Konfusion, koldsved, rysten og sult.
+- Adskilt opbevaring af hurtig- og langtidsvirkende insulin reducerer risikoen for forveksling i en travl hverdag.`,
+  3: `Her er de centrale faglige principper for denne situation:
   
-  - Sikker identifikation af præparatet er afgørende. Insulin-penne kan ligne hinanden visuelt, hvorfor man skal læse på etiketten hver gang.
-  - Ved insulin-fejldosering skal borgeren monitoreres tæt for hypoglykæmiske symptomer som konfusion, rysten og koldsved.
-  - Overvej altid om opbevaringen af hurtig- og langtidsvirkende insulin kan adskilles fysisk for at minimere forvekslingsrisiko.
+- Opioider hæmmer respirationscentret. Patienter med KOL er i øget risiko for respirationsdepression selv ved små doser.
+- Før administration skal respirationsfrekvens og bevidsthedsniveau (GCS) altid måles og dokumenteres som baseline.
+- Monitoreringsintervallet efter administration skal tilpasses præparatets farmakokinetik (hvornår virker det kraftigst?).
+- Naloxon (antidot) skal altid være umiddelbart tilgængeligt i afdelingen som en del af nødberedskabet.`,
+  4: `Her er de centrale faglige principper for denne situation:
   
-  Anvend 'De 5 Rigtige' konsekvent ved hver administration.`,
-  3: `Faglige læringspunkter for denne case:
+- Warfarin har et snævert terapeutisk vindue; mange antibiotika (især makrolider) forstærker virkningen ved at påvirke tarmfloraen.
+- Ved enhver ændring i medicinering hos en AK-patient skal der foretages et aktivt interaktionstjek (f.eks. pro.medicin.dk).
+- Hyppigere INR-målinger er påkrævet i dagene efter opstart af interagerende medicin for at kunne justere dosis rettidigt.
+- Patienten skal instrueres i at observere for blødningstegn: Blå mærker, næseblod eller mørk afføring.`,
+  5: `Her er de centrale faglige principper for denne situation:
   
-  - Opioider virker dæmpende på respirationscentret. En faldende respirationsfrekvens er ofte det første tegn på overdosering.
-  - Særlig forsigtighed kræves hos patienter med nedsat lungefunktion (f.eks. KOL) eller ved kombination med andre sløvende præparater.
-  - Naloxon skal altid være tilgængeligt som modgift ved administration af parenterale opioider.
-  
-  Systematisk monitorering af bevidsthedsniveau og respiration er en kerneopgave i smertebehandlingen.`,
-  4: `Faglige læringspunkter for denne case:
-  
-  - AK-behandling med Warfarin kræver altid tjek af interaktioner, før ny medicin påbegyndes.
-  - Mange typer antibiotika påvirker tarmfloraen og dermed K-vitamin produktionen, hvilket forstærker Warfarins virkning.
-  - Ved opstart af interagerende medicin skal INR måles hyppigere for at justere dosis rettidigt.
-  
-  Brug altid kliniske beslutningsstøtteværktøjer som pro.medicin.dk til interaktionstjek.`,
-  5: `Faglige læringspunkter for denne case:
-  
-  - Dokumentation af allergier skal ske centralt og være synlig i alle relevante medicinsystemer (f.eks. FMK).
-  - Tjek altid patientens allergistatus som en fast del af forberedelsen, før medicinen trækkes op.
-  - Ved kendt allergi bør patienten også bære et fysisk kendetegn, som f.eks. et rødt allergibånd.
-  
-  Hurtig genkendelse af anafylaktiske symptomer og kendskab til placeringen af afdelingens adrenalin-kit redder liv.`
+- Sikker identifikation af allergier er en forudsætning for al medicinhåndtering. Tjek altid journal og FMK før klargøring.
+- Ved kendt medicinallergi skal patienten bære et fysisk allergibånd, og medicinkortet skal være markeret med et tydeligt advarselssymbol.
+- En grundig anamnese ved indlæggelse er vigtig for at skelne mellem reelle allergier og almindelige bivirkninger (f.eks. kvalme).
+- Adrenalin-kit og nødberedskab skal være kendt af alt personale, der administrerer parenterale antibiotika.`
 };
 
 export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): Promise<string> => {
   const apiKey = process.env.API_KEY;
   
-  // Hvis ingen nøgle findes, leveres de faglige fokuspunkter direkte
+  // Hvis ingen nøgle findes, leveres de faglige fokuspunkter som en guide
   if (!apiKey || apiKey === "undefined" || apiKey.length < 5) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return CLINICAL_GUIDANCE[caseStudy.id] || "Tak for din refleksion. Gennemgå de generelle faglige standarder for medicinhåndtering for denne case.";
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return CLINICAL_GUIDANCE[caseStudy.id] || "Gennemgå de kliniske standarder og 'De 5 Rigtige' for denne situation.";
   }
 
   try {
@@ -56,6 +51,7 @@ export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): P
     const systemInstruction = `
       Du er en erfaren klinisk sygeplejeunderviser. 
       Giv konstruktiv og faglig feedback på en 2. semester sygeplejestuderendes refleksion.
+      Vær objektiv og fokusér på faglige standarder.
       Fokusér på:
       - 'De 5 rigtige' (Patient, Medicin, Dosis, Vej, Tid).
       - Patientsikkerhed og klinisk beslutningstagen.
@@ -66,8 +62,8 @@ export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): P
     const promptText = `
       CASE: ${caseStudy.title}
       SCENARIE: ${caseStudy.scenario}
-      REFLEKSION: "${reflection}"
-      Giv faglig feedback herpå baseret på sygeplejestandarder.
+      STUDERENDES REFLEKSION: "${reflection}"
+      Giv faglig feedback baseret på sygeplejestandarder.
     `;
 
     const response = await ai.models.generateContent({
@@ -79,9 +75,9 @@ export const getAIFeedback = async (caseStudy: CaseStudy, reflection: string): P
       },
     });
 
-    return response.text || "Kunne ikke generere feedback. Prøv igen.";
+    return response.text || "Kunne ikke generere feedback. Gennemgå de generelle kliniske principper.";
   } catch (error: any) {
-    console.warn("API fejl, viser generel vejledning.");
-    return CLINICAL_GUIDANCE[caseStudy.id] || "Gennemgå de kliniske standarder for denne patientkategori.";
+    console.warn("API ikke tilgængelig, viser faglige fokuspunkter.");
+    return CLINICAL_GUIDANCE[caseStudy.id] || "Gennemgå de faglige retningslinjer for medicinhåndtering.";
   }
 };
